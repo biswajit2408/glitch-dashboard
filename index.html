@@ -731,17 +731,58 @@ Types: longvideo,short,live,vlog,rest. Shorts=full 30-45sec Hindi/English script
       const data = await jbGet(bins.plans);
       const plans = data?.plans || [];
       if (!plans.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No plans yet</div><div class="empty-sub">Generate your first plan.</div></div>'; return; }
-      el.innerHTML = plans.map(p=>`
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:7px">
-          <div>
+      el.innerHTML = plans.map((p,i)=>{
+        const bid=`sp${i}`, cid=`sc${i}`;
+        const plan = p.fullPlan || {};
+        const BADGES=['b0','b1','b2','b3','b4','b5','b6'];
+        const TL={longvideo:'🎬 Video',short:'⚡ Short',live:'🔴 Live',vlog:'📹 Vlog',rest:'😴 Rest'};
+        const daysHtml = (plan.days||[]).map((day,di)=>{
+          const blocks = day.contentBlocks||[];
+          const dbid=`sp${i}d${di}`, dcid=`sp${i}dc${di}`;
+          const tags = blocks.map(b=>{
+            const c={longvideo:'tv',short:'ts',live:'tl',rest:'tr'}[b.type]||'tr';
+            const l={longvideo:'Video',short:'Short',live:'Live',vlog:'Vlog',rest:'Rest'}[b.type]||b.type;
+            return `<span class="ttag ${c}">${l}</span>`;
+          }).join(' ');
+          return `<div class="day-card" style="margin-bottom:6px">
+          <div class="day-hdr" id="sh${i}${di}" onclick="td('${dbid}','${dcid}','sh${i}${di}')">
+            <span class="day-badge ${BADGES[di]||'b0'}">${day.day}</span>
+            <span class="day-title">${blocks[0]?.title||day.day}</span>
+            <div style="display:flex;gap:4px;flex-wrap:wrap">${tags}</div>
+            <span class="chev" id="${dcid}">▼</span>
+          </div>
+          <div class="day-body" id="${dbid}">
+            ${day.postingTime&&day.postingTime!=='No posting'?`<div class="time-pill">🕐 ${day.postingTime}</div>`:''}
+            ${blocks.map(b=>`<div class="cblock">
+              <div class="cb-hdr">${b.emoji||''} ${TL[b.type]||b.type}</div>
+              ${b.title?`<div class="field"><div class="fl">Title</div><div class="fv big">${b.title}</div></div>`:''}
+              ${b.hook?`<div class="field"><div class="fl">Hook</div><div class="fv teal">"${b.hook}"</div></div>`:''}
+              ${b.outline?`<div class="field"><div class="fl">Outline</div><div class="fv">${b.outline}</div></div>`:''}
+              ${b.script?`<div class="field"><div class="fl">Script</div><div class="fv script">${b.script}</div></div>`:''}
+              ${b.thumbnailConcept?`<div class="field"><div class="fl">Thumbnail</div><div class="fv">${b.thumbnailConcept}</div></div>`:''}
+              ${b.postingTip?`<div class="field"><div class="fl">Tip</div><div class="fv amber">${b.postingTip}</div></div>`:''}
+              ${b.hashtags?`<div class="field"><div class="fl">Hashtags</div><div class="fv" style="color:var(--text2);font-size:12px">${b.hashtags}</div></div>`:''}
+            </div>`).join('')}
+          </div>
+        </div>`;
+        }).join('');
+
+        return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:13px;margin-bottom:10px;overflow:hidden">
+        <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid transparent" id="${cid}" onclick="togglePlan('${bid}','${cid}')">
+          <div style="flex:1">
             <div style="font-size:14px;font-weight:600">${p.weekTitle||'Plan'}</div>
             <div style="font-size:11px;color:var(--text2);margin-top:2px">${p.savedOn||''} · ${p.contentMode||''} · ${p.aiProvider||''}</div>
           </div>
-          <button class="btn btn-danger btn-sm" onclick="deletePlan('${p.id}')">🗑️</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deletePlan('${p.id}')">🗑️</button>
+          <span style="color:var(--text2);font-size:12px;transition:transform .2s" id="${bid}chev">▼</span>
         </div>
-        <div style="font-size:13px;color:var(--text2)">${p.weekSummary||''}</div>
-      </div>`).join('');
+        <div id="${bid}" style="display:none;padding:14px">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:12px">${p.weekSummary||''}</div>
+          ${plan.trendingTopics?.length ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">${plan.trendingTopics.map(t=>`<span style="background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-size:11px;color:var(--teal)">${t}</span>`).join('')}</div>` : ''}
+          ${daysHtml}
+        </div>
+      </div>`;
+      }).join('');
     } catch(e) { el.innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Error loading</div><div class="empty-sub">${e.message}</div></div>`; }
   }
 
@@ -876,6 +917,17 @@ Types: longvideo,short,live,vlog,rest. Shorts=full 30-45sec Hindi/English script
       </div></div>`).join('') ||
               '<div class="empty-state"><div class="empty-icon">💡</div><div class="empty-title">No ideas yet</div></div>';
     } catch(e) { console.error('Dash refresh error:', e); }
+  }
+
+  // ─── TOGGLE PLAN ────────────────────────────────────────────
+  function togglePlan(bid, hid) {
+    const body = document.getElementById(bid);
+    const hdr  = document.getElementById(hid);
+    const chev = document.getElementById(bid+'chev');
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    if (chev) chev.style.transform = isOpen ? '' : 'rotate(180deg)';
+    if (hdr)  hdr.style.borderBottomColor = isOpen ? 'transparent' : 'var(--border)';
   }
 
   // ─── TOAST ───────────────────────────────────────────────
