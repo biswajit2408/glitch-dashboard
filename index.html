@@ -394,19 +394,26 @@
   // ─── JSONBIN API ─────────────────────────────────────────
   async function jbGet(binId) {
     const res = await fetch(`${JSONBIN_BASE}/b/${binId}/latest`, {
-      headers: { 'X-Master-Key': jbKey }
+      headers: { 'X-Master-Key': jbKey, 'X-Bin-Meta': 'false' }
     });
     const data = await res.json();
-    return data.record;
+    console.log('jbGet response:', JSON.stringify(data).substring(0,200));
+    // JSONBin wraps in record key
+    if (data?.record !== undefined) return data.record;
+    // Sometimes returns directly
+    if (data?.plans || data?.ideas || data?.analytics) return data;
+    return data;
   }
 
   async function jbUpdate(binId, record) {
     const res = await fetch(`${JSONBIN_BASE}/b/${binId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': jbKey },
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': jbKey, 'X-Bin-Meta': 'false' },
       body: JSON.stringify(record)
     });
-    return await res.json();
+    const data = await res.json();
+    console.log('jbUpdate response:', JSON.stringify(data).substring(0,100));
+    return data;
   }
 
   async function jbCreate(name, initialData) {
@@ -416,7 +423,12 @@
       body: JSON.stringify(initialData)
     });
     const data = await res.json();
-    return data.metadata.id;
+    console.log('jbCreate response:', JSON.stringify(data));
+    // JSONBin returns metadata.id or record.id depending on version
+    if (data?.metadata?.id) return data.metadata.id;
+    if (data?.record?.id) return data.record.id;
+    if (data?.id) return data.id;
+    throw new Error('Could not get bin ID from response: ' + JSON.stringify(data));
   }
 
   // ─── CONNECT ────────────────────────────────────────────
@@ -432,15 +444,35 @@
 
     try {
       jbKey = key;
-      // Create 3 bins if not exist
-      if (!bins.plans) {
-        status.textContent = '📅 Creating Plans bin...';
-        bins.plans = await jbCreate('GnG-Plans', { plans: [] });
+
+      // Test key first with a simple request
+      status.textContent = '🔑 Verifying API key...';
+      const testRes = await fetch(`${JSONBIN_BASE}/b`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': key, 'X-Bin-Name': 'GnG-Plans', 'X-Bin-Private': 'true' },
+        body: JSON.stringify({ plans: [] })
+      });
+      const testData = await testRes.json();
+      console.log('Test response:', JSON.stringify(testData));
+
+      if (testData?.message?.toLowerCase().includes('invalid') || testData?.message?.toLowerCase().includes('unauthorized') || testRes.status === 401) {
+        throw new Error('Invalid API key — please check your JSONBin secret key');
       }
+
+      // Get the bin ID from test request (this was the plans bin)
+      if (!bins.plans) {
+        if (testData?.metadata?.id) bins.plans = testData.metadata.id;
+        else if (testData?.record !== undefined && testData?.metadata) bins.plans = testData.metadata.id;
+        else throw new Error('Unexpected response format: ' + JSON.stringify(testData).substring(0,150));
+      }
+
+      // Create ideas bin
       if (!bins.ideas) {
         status.textContent = '💡 Creating Ideas bin...';
         bins.ideas = await jbCreate('GnG-Ideas', { ideas: [] });
       }
+
+      // Create analytics bin
       if (!bins.analytics) {
         status.textContent = '📈 Creating Analytics bin...';
         bins.analytics = await jbCreate('GnG-Analytics', { analytics: [] });
@@ -453,12 +485,13 @@
       status.textContent = '✅ Connected! All 3 bins created.';
       status.style.color = 'var(--teal)';
       document.getElementById('connected-card').style.display = 'block';
-      toast('JSONBin connected successfully!', 'success');
+      toast('JSONBin connected!', 'success');
       refreshDash();
     } catch(err) {
+      console.error('Connect error:', err);
       status.textContent = '❌ Failed: ' + err.message;
       status.style.color = 'var(--red)';
-      toast('Connection failed — check your API key', 'error');
+      toast('Connection failed', 'error');
     }
     btn.disabled = false;
   }
