@@ -455,15 +455,16 @@
       const testData = await testRes.json();
       console.log('Test response:', JSON.stringify(testData));
 
-      if (testData?.message?.toLowerCase().includes('invalid') || testData?.message?.toLowerCase().includes('unauthorized') || testRes.status === 401) {
-        throw new Error('Invalid API key — please check your JSONBin secret key');
+      // Check for auth errors by status code only
+      if (testRes.status === 401 || testRes.status === 403) {
+        throw new Error('Invalid API key — please check your JSONBin secret key (status ' + testRes.status + ')');
       }
 
       // Get the bin ID from test request (this was the plans bin)
       if (!bins.plans) {
-        if (testData?.metadata?.id) bins.plans = testData.metadata.id;
-        else if (testData?.record !== undefined && testData?.metadata) bins.plans = testData.metadata.id;
-        else throw new Error('Unexpected response format: ' + JSON.stringify(testData).substring(0,150));
+        const binId = testData?.metadata?.id || testData?.id;
+        if (binId) bins.plans = binId;
+        else throw new Error('Could not read bin ID. Response: ' + JSON.stringify(testData).substring(0,200));
       }
 
       // Create ideas bin
