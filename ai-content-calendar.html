@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glitch & Games — AI Content Studio</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Grotesk:wght@500;700&display=swap');
+:root{--purple:#7F77DD;--teal:#5DCAA5;--amber:#EF9F27;--bg:#0F0F1A;--bg2:#16162A;--bg3:#1E1E35;--border:rgba(127,119,221,0.18);--text:#F0F0FF;--text2:#9999BB;--red:#FF3366;--cyan:#33FFEE}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--purple),var(--teal));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700}
+.logo-sub{font-size:11px;color:var(--text2);letter-spacing:.06em;text-transform:uppercase}
+.main{padding:24px 28px;max-width:1020px;margin:0 auto}
+
+/* AI PROVIDER SELECTOR */
+.ai-selector{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:18px}
+.ai-selector-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.ai-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.ai-tab{padding:8px 16px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;cursor:pointer;background:var(--bg3);color:var(--text2);font-family:'Inter',sans-serif;transition:all .18s;display:flex;align-items:center;gap:6px}
+.ai-tab:hover{border-color:var(--purple);color:var(--text)}
+.ai-tab.active{border-color:var(--purple);background:linear-gradient(135deg,#7F77DD18,#5DCAA508);color:var(--text);font-weight:500}
+.ai-tab.offline{border-color:#EF9F2744;color:var(--amber)}
+.ai-tab.offline.active{background:#EF9F2712}
+.api-key-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.api-key-input{flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 14px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none}
+.api-key-input:focus{border-color:var(--purple)}
+.api-key-hint{font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5}
+.api-key-hint a{color:var(--teal);text-decoration:none}
+.save-key-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 16px;color:var(--text2);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:all .18s}
+.save-key-btn:hover{border-color:var(--teal);color:var(--teal)}
+.key-saved{font-size:11px;color:var(--teal);margin-top:5px;display:none}
+
+/* MODE SELECTOR */
+.mode-selector{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:18px}
+.mode-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .18s;text-align:center}
+.mode-card:hover{border-color:var(--purple)}
+.mode-card.active{border-color:var(--purple);background:linear-gradient(135deg,#7F77DD18,#5DCAA508)}
+.mode-icon{font-size:22px;margin-bottom:5px}
+.mode-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.mode-desc{font-size:10px;color:var(--text2);line-height:1.4}
+
+/* CONTROLS */
+.controls{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:20px}
+.controls-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.control-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:14px}
+.control-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
+.control-group select,.control-group input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;appearance:none;cursor:pointer}
+.control-group select:focus,.control-group input:focus{border-color:var(--purple)}
+.generate-btn{width:100%;background:linear-gradient(90deg,var(--purple),var(--teal));border:none;border-radius:10px;padding:13px 24px;color:#fff;font-size:15px;font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer;letter-spacing:.03em;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.generate-btn:hover{opacity:.9}
+.generate-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:52px 24px}
+.loading.show{display:block}
+.spinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-step{font-size:13px;color:var(--text2);padding:4px 0;transition:color .3s}
+.loading-step.active{color:var(--teal);font-weight:500}
+.loading-step.done{color:var(--purple)}
+
+/* CALENDAR */
+.calendar{display:none}
+.calendar.show{display:block}
+.week-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.week-title{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700}
+.week-meta{font-size:12px;color:var(--text2);margin-top:4px;line-height:1.5}
+.ai-used-badge{display:inline-flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--text2);margin-top:5px}
+.regen-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 14px;color:var(--text2);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.regen-btn:hover{border-color:var(--purple);color:var(--purple)}
+.stat-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px}
+.stat-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.stat-val{font-size:20px;font-weight:700;color:var(--purple);margin-bottom:2px}
+.stat-label{font-size:11px;color:var(--text2)}
+.trend-row{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px}
+.trend-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.trend-chips{display:flex;flex-wrap:wrap;gap:6px}
+.trend-chip{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px;color:var(--teal);font-weight:500}
+.day-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.day-header{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;flex-wrap:wrap}
+.day-badge{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;padding:4px 11px;border-radius:20px;min-width:84px;text-align:center}
+.b-mon{background:#7F77DD22;color:var(--purple);border:1px solid #7F77DD44}
+.b-tue{background:#5DCAA522;color:var(--teal);border:1px solid #5DCAA544}
+.b-wed{background:#EF9F2722;color:var(--amber);border:1px solid #EF9F2744}
+.b-thu{background:#FF336622;color:var(--red);border:1px solid #FF336644}
+.b-fri{background:#33FFEE22;color:var(--cyan);border:1px solid #33FFEE44}
+.b-sat{background:#7F77DD22;color:var(--purple);border:1px solid #7F77DD44}
+.b-sun{background:#5DCAA522;color:var(--teal);border:1px solid #5DCAA544}
+.day-title-text{font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:0}
+.type-tags{display:flex;gap:5px;flex-wrap:wrap}
+.ttag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.t-video{background:#7F77DD22;color:var(--purple)}
+.t-short{background:#5DCAA522;color:var(--teal)}
+.t-live{background:#FF336622;color:var(--red)}
+.t-vlog{background:#EF9F2722;color:var(--amber)}
+.t-rest{background:#ffffff11;color:var(--text2)}
+.day-chev{color:var(--text2);font-size:13px;transition:transform .2s;margin-left:auto}
+.day-chev.open{transform:rotate(180deg)}
+.day-body{display:none;padding:16px}
+.day-body.open{display:block}
+.time-pill{display:inline-flex;align-items:center;gap:5px;background:#EF9F2722;border:1px solid #EF9F2744;border-radius:20px;padding:3px 10px;font-size:12px;color:var(--amber);font-weight:600;margin-bottom:12px}
+.cblock{background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;border:1px solid var(--border)}
+.cblock:last-child{margin-bottom:0}
+.cb-header{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.cb-icon{font-size:16px}
+.cb-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em}
+.field{margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid var(--border)}
+.field:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.fl{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.fv{font-size:13px;color:var(--text);line-height:1.7}
+.fv.big{font-size:14px;font-weight:600}
+.fv.teal{color:var(--teal);font-style:italic}
+.fv.amber{color:var(--amber);font-weight:500}
+.fv.script{background:var(--bg);padding:10px;border-radius:7px;white-space:pre-wrap;font-size:12px;line-height:1.85;border:1px solid var(--border)}
+.empty{text-align:center;padding:60px 24px;color:var(--text2)}
+.empty-icon{font-size:52px;margin-bottom:14px}
+.empty-title{font-size:18px;font-weight:600;color:var(--text);margin-bottom:8px}
+.empty-sub{font-size:13px;line-height:1.65}
+.error-box{background:#FF336612;border:1px solid #FF336644;border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:13px;color:var(--red);line-height:1.6}
+.sec-label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🎮</div>
+    <div>
+      <div class="logo-text">Glitch & Games</div>
+      <div class="logo-sub">AI Content Studio — Multi-AI</div>
+    </div>
+  </div>
+  <div style="font-size:12px;color:var(--text2)">@glitchandgames</div>
+</div>
+
+<div class="main">
+
+  <!-- AI PROVIDER -->
+  <div class="ai-selector">
+    <div class="ai-selector-title">🤖 Choose your AI provider</div>
+    <div class="ai-tabs">
+      <button class="ai-tab active" onclick="setAI('claude',this)">🟣 Claude (Anthropic)</button>
+      <button class="ai-tab" onclick="setAI('openai',this)">🟢 ChatGPT (OpenAI)</button>
+      <button class="ai-tab" onclick="setAI('gemini',this)">🔵 Gemini (Google)</button>
+      <button class="ai-tab offline" onclick="setAI('offline',this)">⚡ Offline Mode</button>
+    </div>
+    <div id="key-section">
+      <div class="api-key-row">
+        <input class="api-key-input" type="password" id="api-key-input" placeholder="Paste your API key here..." />
+        <button class="save-key-btn" onclick="saveKey()">Save Key</button>
+      </div>
+      <div class="api-key-hint" id="key-hint">
+        Get your Claude API key from <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key. Key is saved in your browser only.
+      </div>
+      <div class="key-saved" id="key-saved">✅ Key saved for this session</div>
+    </div>
+    <div id="offline-note" style="display:none;font-size:13px;color:var(--amber);margin-top:8px;line-height:1.6">
+      ⚡ <b>Offline mode</b> — generates a smart content plan using built-in templates. No API key needed. Great for quick planning without internet.
+    </div>
+  </div>
+
+  <!-- MODE SELECTOR -->
+  <div class="sec-label">Content type for this week</div>
+  <div class="mode-selector" id="mode-selector">
+    <div class="mode-card active" onclick="setMode(this,'gaming')" data-mode="gaming"><div class="mode-icon">🎮</div><div class="mode-name">Gaming</div><div class="mode-desc">BGMI, Free Fire, Valorant & trending games</div></div>
+    <div class="mode-card" onclick="setMode(this,'vlog')" data-mode="vlog"><div class="mode-icon">📹</div><div class="mode-name">Vlog</div><div class="mode-desc">Daily life, Rajkot stories, behind the scenes</div></div>
+    <div class="mode-card" onclick="setMode(this,'mixed')" data-mode="mixed"><div class="mode-icon">🔀</div><div class="mode-name">Mixed</div><div class="mode-desc">Gaming + vlog + anything else combined</div></div>
+    <div class="mode-card" onclick="setMode(this,'educational')" data-mode="educational"><div class="mode-icon">🧠</div><div class="mode-name">Educational</div><div class="mode-desc">Tips, tutorials, gaming guides & how-tos</div></div>
+    <div class="mode-card" onclick="setMode(this,'challenge')" data-mode="challenge"><div class="mode-icon">🏆</div><div class="mode-name">Challenge</div><div class="mode-desc">Full week of challenge-based content</div></div>
+    <div class="mode-card" onclick="setMode(this,'collab')" data-mode="collab"><div class="mode-icon">🤝</div><div class="mode-name">Collab</div><div class="mode-desc">Community, reactions, trends & collabs</div></div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="controls-title">⚙️ Customise your week</div>
+    <div class="control-grid">
+      <div class="control-group">
+        <label id="focus-label">Game focus this week</label>
+        <select id="focus">
+          <option value="whatever is currently trending in Indian gaming">🔥 Whatever is trending now</option>
+          <option value="BGMI">🎯 BGMI</option>
+          <option value="Free Fire">🔥 Free Fire</option>
+          <option value="Valorant">⚡ Valorant</option>
+          <option value="GTA V">🚗 GTA V</option>
+          <option value="Minecraft">⛏️ Minecraft</option>
+          <option value="Mixed games">🎮 Mix of games</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Content vibe this week</label>
+        <select id="energy">
+          <option value="funny and chaotic with awkward moments">😂 Funny & chaotic</option>
+          <option value="chill and relaxed">😌 Chill & relaxed</option>
+          <option value="challenge based with specific goals">🏆 Challenge based</option>
+          <option value="emotional and honest personal story">❤️ Emotional & honest</option>
+          <option value="competitive tryhard parody">💪 Competitive (parody)</option>
+          <option value="educational with tips and tricks">🧠 Educational</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Target audience</label>
+        <select id="audience">
+          <option value="Indian gamers aged 15-25 who speak Hindi and English">🇮🇳 Indian gamers (Hindi/English)</option>
+          <option value="Bengali speaking gaming audience">Bengali gaming audience</option>
+          <option value="Rajkot Gujarat local audience">Rajkot / Gujarat audience</option>
+          <option value="General Indian YouTube audience">General Indian audience</option>
+          <option value="New subscribers just discovering the channel">New subscribers</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Special request (optional)</label>
+        <input type="text" id="special" placeholder="e.g. include mom reaction, collab..."/>
+      </div>
+    </div>
+    <button class="generate-btn" id="gen-btn" onclick="generate()">⚡ Generate Full Content Plan</button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:16px" id="loading-ai-label">Generating with Claude AI...</div>
+    <div>
+      <div class="loading-step" id="ls1">🔍 Analysing trends for your content type</div>
+      <div class="loading-step" id="ls2">💡 Identifying high-potential content angles</div>
+      <div class="loading-step" id="ls3">🎬 Writing video ideas & outlines</div>
+      <div class="loading-step" id="ls4">📝 Scripting Shorts in Hindi/English</div>
+      <div class="loading-step" id="ls5">🖼️ Creating thumbnail concepts</div>
+      <div class="loading-step" id="ls6">📅 Finalising your weekly schedule</div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="calendar" id="calendar">
+    <div class="week-header">
+      <div>
+        <div class="week-title" id="wtitle">Your Weekly Plan</div>
+        <div class="week-meta" id="wmeta"></div>
+        <div class="ai-used-badge" id="ai-used-badge">🟣 Generated with Claude</div>
+      </div>
+      <button class="regen-btn" onclick="generate()">🔄 Regenerate</button>
+    </div>
+    <div class="stat-bar" id="stat-bar"></div>
+    <div class="trend-row" id="trend-row" style="display:none">
+      <div class="trend-label">🔥 Trending topics this week</div>
+      <div class="trend-chips" id="trend-chips"></div>
+    </div>
+    <div id="cal-content"></div>
+  </div>
+
+  <!-- EMPTY -->
+  <div class="empty" id="empty">
+    <div class="empty-icon">✨</div>
+    <div class="empty-title">Multi-AI Content Studio</div>
+    <div class="empty-sub">Choose your AI provider, add your API key,<br>pick content type and hit Generate.<br><br>Works with Claude, ChatGPT, Gemini or fully offline.</div>
+  </div>
+
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let currentAI = 'claude';
+let currentMode = 'gaming';
+let apiKeys = {};
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const BADGES = ['b-mon','b-tue','b-wed','b-thu','b-fri','b-sat','b-sun'];
+
+// ─── AI PROVIDER ─────────────────────────────────────────
+function setAI(ai, el) {
+  document.querySelectorAll('.ai-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentAI = ai;
+
+  const keySection = document.getElementById('key-section');
+  const offlineNote = document.getElementById('offline-note');
+  const keyHint = document.getElementById('key-hint');
+  const keyInput = document.getElementById('api-key-input');
+
+  if (ai === 'offline') {
+    keySection.style.display = 'none';
+    offlineNote.style.display = 'block';
+  } else {
+    keySection.style.display = 'block';
+    offlineNote.style.display = 'none';
+    // Restore saved key
+    keyInput.value = apiKeys[ai] || '';
+
+    const hints = {
+      claude: 'Get your Claude API key from <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key.',
+      openai: 'Get your OpenAI API key from <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a> → Create new secret key.',
+      gemini: 'Get your Gemini API key from <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a> → Get API key. It\'s free!'
+    };
+    keyHint.innerHTML = hints[ai] + ' Key is saved in your browser only.';
+    document.getElementById('key-saved').style.display = 'none';
+  }
+}
+
+function saveKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val) return;
+  apiKeys[currentAI] = val;
+  document.getElementById('key-saved').style.display = 'block';
+  setTimeout(() => document.getElementById('key-saved').style.display = 'none', 2000);
+}
+
+// ─── MODE ────────────────────────────────────────────────
+function setMode(el, mode) {
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentMode = mode;
+
+  const focusLabel = document.getElementById('focus-label');
+  const focusSelect = document.getElementById('focus');
+
+  const focusOptions = {
+    gaming: {label:'Game focus this week', opts:[
+      ['whatever is currently trending in Indian gaming','🔥 Whatever is trending now'],
+      ['BGMI','🎯 BGMI'],['Free Fire','🔥 Free Fire'],['Valorant','⚡ Valorant'],
+      ['GTA V','🚗 GTA V'],['Minecraft','⛏️ Minecraft'],['Mixed games','🎮 Mix of games']
+    ]},
+    vlog: {label:'Vlog focus this week', opts:[
+      ['daily life in Rajkot as a Bengali creator','🏙️ Daily life in Rajkot'],
+      ['street food and local culture in Rajkot','🍜 Rajkot street food & culture'],
+      ['creator lifestyle and behind the scenes','🎥 Creator behind the scenes'],
+      ['Bengali in Gujarat cross-cultural moments','🤝 Bengali in Gujarat stories'],
+      ['travel and exploration around Gujarat','✈️ Travel & exploration'],
+      ['family moments and home life','🏠 Family & home life']
+    ]},
+    mixed: {label:'Primary focus this week', opts:[
+      ['gaming content mixed with vlog moments','🔀 Gaming + Vlog mix'],
+      ['gaming content with trending challenges and vlogs','🎮 Gaming + Challenges + Vlog'],
+      ['vlog content with gaming references','📹 Vlog-first with gaming touches'],
+      ['trending topics across gaming and lifestyle','🔥 Trending across all niches'],
+      ['funny content mixing gaming fails and real life fails','😂 Comedy across gaming & life']
+    ]},
+    educational: {label:'Educational topic focus', opts:[
+      ['gaming tips and tricks for beginners in India','🎯 Gaming tips for beginners'],
+      ['YouTube growth tips for gaming creators','📈 YouTube growth tips'],
+      ['PC gaming setup and hardware guides','💻 Setup & hardware guides'],
+      ['how to improve at BGMI and mobile games','🏆 Mobile game improvement'],
+      ['content creation tools and workflow','🛠️ Creator tools & workflow']
+    ]},
+    challenge: {label:'Challenge theme', opts:[
+      ['extreme gaming challenges all week','🏆 Extreme gaming challenges'],
+      ['real life challenges mixed with gaming','💪 Real life + gaming challenges'],
+      ['24 hour challenges','⏰ 24-hour challenges'],
+      ['budget gaming challenges','💰 Budget gaming challenges'],
+      ['viewer-suggested challenge week','👥 Viewer challenge week']
+    ]},
+    collab: {label:'Collab focus', opts:[
+      ['reaction videos and community engagement','👥 Reactions & community'],
+      ['duet challenges and collab gaming sessions','🤝 Duet challenges & collabs'],
+      ['trending memes and viral gaming moments','😂 Memes & viral moments'],
+      ['fan Q&A and community interaction','💬 Fan Q&A & interaction'],
+      ['reacting to other Indian gaming creators','📺 Reacting to creators']
+    ]}
+  };
+
+  const config = focusOptions[mode] || focusOptions.gaming;
+  focusLabel.textContent = config.label;
+  focusSelect.innerHTML = config.opts.map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+}
+
+// ─── PROMPT BUILDER ──────────────────────────────────────
+function buildPrompt(focus, energy, audience, special, mode) {
+  const modeDesc = {
+    gaming:'pure gaming content — gameplay, reactions, challenges, commentary',
+    vlog:'vlog content — daily life, Rajkot stories, Bengali in Gujarat, creator behind-the-scenes',
+    mixed:'mixed content combining gaming, vlogging, daily life, and trending topics',
+    educational:'educational content — tips, tutorials, guides, how-tos for gaming and content creation',
+    challenge:'challenge-based content — specific gaming challenges, real-life challenges, 24-hour challenges',
+    collab:'collab and community content — reactions, trends, community engagement, viral moments'
+  };
+
+  return `You are an expert YouTube content strategist for "Glitch & Games" (@glitchandgames), a Hindi/English YouTube channel by Biswajit Jana — a polite, introverted Bengali creator from Rajkot, Gujarat, India. Style: funny through awkward moments, personality-over-skill, inspired by GamerFleet. Language: natural Hindi + English mix. Brand tagline: PLAY FOREVER.
+
+THIS WEEK:
+- Content mode: ${modeDesc[mode]}
+- Focus: ${focus}
+- Vibe: ${energy}
+- Audience: ${audience}
+- Special requests: ${special}
+
+Return ONLY valid raw JSON, no markdown, no backticks, no explanation:
+
+{"weekTitle":"catchy week title","weekSummary":"1-2 sentence strategy","weekStats":{"totalVideos":0,"totalShorts":0,"liveStreams":0,"estimatedReach":"e.g. 500-2000 new viewers"},"trendingTopics":["t1","t2","t3","t4","t5"],"days":[{"day":"Monday","postingTime":"7:00 PM IST","contentBlocks":[{"type":"longvideo","emoji":"🎬","title":"video title","whyNow":"why trending now","hook":"exact opening line","outline":"structured outline","script":"key talking points","thumbnailConcept":"vivid thumbnail description","postingTip":"specific tip","hashtags":"#tag1 #tag2 #tag3 #tag4 #tag5"}]}]}
+
+SCHEDULE RULES:
+- gaming/challenge: Mon=LongVideo+Short, Tue=Short, Wed=LongVideo+Short, Thu=Short, Fri=Short, Sat=Live+Short, Sun=Rest
+- vlog: Mon=Vlog+Short, Tue=Short, Wed=Vlog, Thu=Short, Fri=BehindScenesShort, Sat=WeeklyVlog, Sun=Rest
+- mixed: Mon=Gaming+Short, Tue=Short, Wed=Vlog+Short, Thu=Short, Fri=Short, Sat=Live, Sun=Rest
+- educational: Mon=Tutorial+Short, Tue=TipShort, Wed=TipsVideo+Short, Thu=Short, Fri=Short, Sat=LiveQA, Sun=Rest
+- collab: Mon=Reaction+Short, Tue=Short, Wed=ColabContent, Thu=Short, Fri=TrendShort, Sat=CommunityLive, Sun=Rest
+
+Type values: longvideo, short, live, vlog, rest. For shorts include full Hindi/English mix script 30-45 sec. Sunday is always rest + next week prep notes. Make everything specific to Biswajit's personality — quiet, awkward, self-aware, funny because honest not performative.`;
+}
+
+// ─── API CALLS ───────────────────────────────────────────
+async function callClaude(prompt, key) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key': key, 'anthropic-version':'2023-06-01'},
+    body: JSON.stringify({model:'claude-opus-4-6', max_tokens:4000, messages:[{role:'user',content:prompt}]})
+  });
+  if (!res.ok) {
+    // fallback to sonnet
+    const res2 = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key': key, 'anthropic-version':'2023-06-01'},
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:4000, messages:[{role:'user',content:prompt}]})
+    });
+    const d2 = await res2.json();
+    return d2.content.map(i=>i.text||'').join('');
+  }
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Claude API error');
+  return data.content.map(i=>i.text||'').join('');
+}
+
+async function callOpenAI(prompt, key) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+    body: JSON.stringify({model:'gpt-4o', max_tokens:4000, messages:[{role:'user',content:prompt}]})
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'OpenAI API error');
+  return data.choices[0].message.content;
+}
+
+async function callGemini(prompt, key) {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Gemini API error');
+  return data.candidates[0].content.parts[0].text;
+}
+
+// ─── OFFLINE FALLBACK ─────────────────────────────────────
+function generateOffline(focus, energy, mode) {
+  const games = focus.includes('BGMI') ? 'BGMI' : focus.includes('Free Fire') ? 'Free Fire' : focus.includes('Valorant') ? 'Valorant' : 'trending games';
+  const vibeWord = energy.includes('funny') ? 'Chaotic' : energy.includes('chill') ? 'Chill' : energy.includes('challenge') ? 'Challenge' : 'Epic';
+
+  return {
+    weekTitle: `${vibeWord} Week — ${games} Edition 🎮`,
+    weekSummary: `A ${energy} week focused on ${focus}. Personality-first content tailored for Glitch & Games audience.`,
+    weekStats: { totalVideos: 2, totalShorts: 5, liveStreams: 1, estimatedReach: "500–1500 new viewers" },
+    trendingTopics: ["#BGMI2026","#IndianGaming","#GamingHindi","#FreeFire","#GlitchAndGames"],
+    days: [
+      { day:"Monday", postingTime:"7:00 PM IST", contentBlocks:[
+        { type:"longvideo", emoji:"🎬", title:`I Played ${games} For 3 Hours and This Happened... 😭`, whyNow:`${games} is trending in Indian gaming right now — perfect time to ride the wave`, hook:`"Yaar aaj kuch alag karte hain. Teen ghante, ek game, aur main... well, you'll see."`, outline:"1. Intro (1 min) — set expectations low\n2. Hour 1 — warm up and early fails\n3. Hour 2 — the chaos begins\n4. Hour 3 — desperate times\n5. Final result + honest reaction", script:"Key moments to capture: First death, biggest fail, one lucky win if it happens, final reaction", thumbnailConcept:`Dark background #0F0F1A, your shocked face left side, ${games} logo right, big text '3 HOURS' in purple #7F77DD, clock emoji`, postingTip:"Pin a comment asking viewers what game to play next week", hashtags:`#${games.replace(' ','')} #IndianGaming #GamingHindi #GlitchAndGames #PLAFOREVER`},
+        { type:"short", emoji:"⚡", title:"When you die in the final circle... 💀", hook:`"Top 3 tha main... TOP 3."`, script:`"Top 3 tha main... TOP 3.\n[Hindi] Poora game khelaa, poora match survive kiyaa—\n[English] And then one grenade.\nOne. Single. Grenade.\n[Hindi] Bhai main kya bolun... kuch nahi bolna.\n[3 second silence]\nGlitch and Games. Subscribe karo. Play forever."`, thumbnailConcept:"Crying/shocked face, '1 GRENADE' text, dark background", postingTip:"Use the actual death clip before the reaction", hashtags:"#GamingFails #BGMI #Shorts #IndianGaming #GlitchAndGames"}
+      ]},
+      { day:"Tuesday", postingTime:"6:00 PM IST", contentBlocks:[
+        { type:"short", emoji:"⚡", title:"Introvert gamer confession 😅", hook:`"Main bahut introvert hoon."`, script:`"Main bahut introvert hoon.\n[English] Like, I don't talk much in real life.\n[Hindi] But game ke andar? Bhai non-stop bolता hoon.\nMere teammates, mere enemies, walls — sab ko bolता hoon.\n[English] Outside — silent. Inside the game — chaos.\nWelcome to Glitch and Games."`, thumbnailConcept:"Split — serious face outside / crazy face in-game, purple accent", postingTip:"Post between 5-7 PM for max Shorts reach", hashtags:"#IntrovertGamer #GamingLife #Relatable #GlitchAndGames #Shorts"}
+      ]},
+      { day:"Wednesday", postingTime:"7:00 PM IST", contentBlocks:[
+        { type:"longvideo", emoji:"🎬", title:`I Only Used the WORST Weapon in ${games} — Disaster 😂`, whyNow:"Challenge videos perform 40% better than regular gameplay — handicap format gets high retention", hook:`"Aaj ek rule hai. Sirf ek weapon. Worst weapon. Poora game. Let's see how bad this gets."`, outline:"1. Show the weapon choice + set stakes\n2. First match — immediate struggle\n3. Middle matches — adapting or failing\n4. Final match — do or die moment\n5. Results reveal + honest verdict", script:"Commentary style: describe what's happening + react honestly. Don't force jokes — let the situation be the comedy.", thumbnailConcept:`Terrible weapon highlighted with red X, your horrified expression, '#WORST WEAPON' text in amber #EF9F27, dark bg`, postingTip:"This format generates great Shorts clips — mark 3 funny moments while editing", hashtags:`#${games.replace(' ','')}Challenge #GamingChallenge #IndianGaming #GlitchAndGames #Shorts`},
+        { type:"short", emoji:"⚡", title:"Random teammates be like... 😭", hook:`"Bhai random squad mil gaya."`, script:`"Bhai random squad mil gaya.\n[English] First thing one guy does?\n[Hindi] Sidha rush karta hai akela — no communication, no plan.\n[English] Dies in 10 seconds.\n[Hindi] Aur phir mujhe blame karta hai.\n[English] Every. Single. Time.\nThis is why I play solo.\nGlitch and Games — subscribe if you understand the pain."`, thumbnailConcept:"You with head in hands, random squad icons with question marks", postingTip:"Tag this as relatable gaming content", hashtags:"#RandomSquad #GamingPain #Relatable #GlitchAndGames #Shorts"}
+      ]},
+      { day:"Thursday", postingTime:"6:00 PM IST", contentBlocks:[
+        { type:"short", emoji:"⚡", title:"Living in Rajkot as a Bengali gamer 🏙️", hook:`"Things nobody tells you about being a Bengali gamer in Rajkot:"`, script:`"Things nobody tells you about being a Bengali gamer in Rajkot:\n[Hindi] Ek — yahan gaming cafe nahi hai mere paas.\n[English] Two — my neighbours think I'm talking to myself.\n[Hindi] Teen — ghar wale poochte hain 'ye khelne se paise milte hain kya?'\n[English] And four — yes. Eventually. Watch me.\nGlitch and Games. Play Forever."`, thumbnailConcept:"Rajkot skyline background, your face looking determined, text overlay", postingTip:"This cross-cultural content brings both Bengali AND Gujarati audiences", hashtags:"#RajkotGamer #BengaliGamer #GamingIndia #GlitchAndGames #Shorts"}
+      ]},
+      { day:"Friday", postingTime:"6:00 PM IST", contentBlocks:[
+        { type:"short", emoji:"⚡", title:"Tomorrow we go LIVE 🔴 — hype Short", hook:`"Kal live aa rahe hain."`, script:`"Kal live aa rahe hain.\n[English] Saturday. 8 PM IST.\n[Hindi] Aur main promise karta hoon — yeh meri best stream nahi hogi.\n[English] There will be fails. There will be rage. There will be moments where I question my life choices.\n[Hindi] But hum saath mein khelenge.\n[English] See you tomorrow. Glitch and Games. Play forever.\n[Hindi] Aana zaroor."`, thumbnailConcept:"LIVE text in red, your excited/nervous face, Saturday 8PM IST text", postingTip:"Post this exactly 24 hours before your stream for max notification reach", hashtags:"#LiveStream #GamingLive #GlitchAndGames #Shorts #Saturday"}
+      ]},
+      { day:"Saturday", postingTime:"8:00 PM IST", contentBlocks:[
+        { type:"live", emoji:"🔴", title:`LIVE — Playing ${games} with YOU! 🎮`, whyNow:"Saturday evening 8 PM is peak gaming time in India — maximum concurrent viewers", hook:`"Aa gaye! Chalo shuru karte hain — aaj hum ${games} khel rahe hain aur tum bhi ho saath."`, outline:"1. Starting Soon screen (5 min)\n2. Welcome & intro (5 min)\n3. Main gameplay (90 min)\n4. Viewer games/requests (20 min)\n5. Wrap up + next week tease (5 min)", script:"Talking points: Welcome regulars by name. Ask chat what they want to see. React to comments while playing. Share one honest story from the week.", thumbnailConcept:`LIVE badge red, ${games} background, your face, '8 PM SATURDAY' text in amber`, postingTip:"Keep archive as unlisted first, review it, then make public — live streams become free long-form content", hashtags:`#LiveStream #${games.replace(' ','')}Live #GamingLive #GlitchAndGames`},
+        { type:"short", emoji:"⚡", title:"Stream highlights — best moment 🔥", hook:`"Stream pe jo hua woh main expect nahi karta tha."`, script:"Clip the single best/funniest/most shocking moment from the stream. Add reaction text overlay. 30 seconds max.", thumbnailConcept:"Stream highlight screenshot, reaction face inset, '😱 LIVE MOMENT' text", postingTip:"Post stream highlights within 2 hours of stream ending while audience is still warm", hashtags:"#StreamHighlights #GamingLive #GlitchAndGames #Shorts"}
+      ]},
+      { day:"Sunday", postingTime:"No posting today", contentBlocks:[
+        { type:"rest", emoji:"😴", title:"Rest Day + Plan Next Week", whyNow:"Consistency requires recovery — don't burn out in week 1", hook:"", outline:"", script:`REST DAY TASKS:\n✅ Watch back your best video this week — note what worked\n✅ Reply to all comments you haven't replied to yet\n✅ Write 5 video ideas for next week in your notes app\n✅ Check YouTube Studio analytics — which video performed best?\n✅ Plan next week's game focus based on what's trending\n✅ Prep Monday's thumbnail concept tonight\n\nRemember: GamerFleet took 4 years. You're building something real. One week at a time.`, thumbnailConcept:"", postingTip:"Use Sunday to engage with community posts, not create content", hashtags:""}
+      ]}
+    ]
+  };
+}
+
+// ─── MAIN GENERATE ───────────────────────────────────────
+async function generate() {
+  const focus = document.getElementById('focus').value;
+  const energy = document.getElementById('energy').value;
+  const audience = document.getElementById('audience').value;
+  const special = document.getElementById('special').value || 'nothing specific';
+  const key = apiKeys[currentAI] || document.getElementById('api-key-input')?.value?.trim();
+
+  if (currentAI !== 'offline' && !key) {
+    alert('Please enter and save your API key first, or switch to Offline Mode.');
+    return;
+  }
+
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('calendar').classList.remove('show');
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('gen-btn').disabled = true;
+
+  const aiLabels = {claude:'Claude AI (Anthropic)',openai:'ChatGPT (OpenAI)',gemini:'Gemini (Google)',offline:'Offline Templates'};
+  document.getElementById('loading-ai-label').textContent = `Generating with ${aiLabels[currentAI]}...`;
+
+  const steps = ['ls1','ls2','ls3','ls4','ls5','ls6'];
+  let si = 0;
+  const iv = setInterval(() => {
+    if (si > 0) { document.getElementById(steps[si-1]).classList.remove('active'); document.getElementById(steps[si-1]).classList.add('done'); }
+    if (si < steps.length) { document.getElementById(steps[si]).classList.add('active'); si++; }
+    else clearInterval(iv);
+  }, 700);
+
+  try {
+    let cal;
+    if (currentAI === 'offline') {
+      await new Promise(r => setTimeout(r, 4000));
+      cal = generateOffline(focus, energy, currentMode);
+    } else {
+      const prompt = buildPrompt(focus, energy, audience, special, currentMode);
+      let raw = '';
+      if (currentAI === 'claude') raw = await callClaude(prompt, key);
+      else if (currentAI === 'openai') raw = await callOpenAI(prompt, key);
+      else if (currentAI === 'gemini') raw = await callGemini(prompt, key);
+      const clean = raw.replace(/```json|```/g,'').trim();
+      cal = JSON.parse(clean);
+    }
+
+    clearInterval(iv);
+    steps.forEach(s => { document.getElementById(s).classList.remove('active'); document.getElementById(s).classList.add('done'); });
+    renderCalendar(cal);
+
+  } catch(err) {
+    clearInterval(iv);
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('empty').style.display = 'block';
+    document.getElementById('empty').innerHTML = `
+      <div class="empty-icon">⚠️</div>
+      <div class="empty-title">Generation failed</div>
+      <div class="empty-sub">${err.message}<br><br>
+      <b>Try:</b> Check your API key is correct → Switch to a different AI provider → Use Offline Mode as backup</div>`;
+    document.getElementById('gen-btn').disabled = false;
+  }
+}
+
+// ─── RENDER ──────────────────────────────────────────────
+function renderCalendar(data) {
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('calendar').classList.add('show');
+  document.getElementById('gen-btn').disabled = false;
+
+  document.getElementById('wtitle').textContent = data.weekTitle || 'Your Weekly Plan';
+  document.getElementById('wmeta').textContent = data.weekSummary || '';
+
+  const aiLabel = {claude:'🟣 Generated with Claude',openai:'🟢 Generated with ChatGPT',gemini:'🔵 Generated with Gemini',offline:'⚡ Generated Offline'}[currentAI];
+  document.getElementById('ai-used-badge').textContent = aiLabel;
+
+  if (data.weekStats) {
+    const s = data.weekStats;
+    document.getElementById('stat-bar').innerHTML = `
+      <div class="stat-item"><div class="stat-val">${s.totalVideos||0}</div><div class="stat-label">Long Videos</div></div>
+      <div class="stat-item"><div class="stat-val" style="color:var(--teal)">${s.totalShorts||0}</div><div class="stat-label">Shorts</div></div>
+      <div class="stat-item"><div class="stat-val" style="color:var(--red)">${s.liveStreams||0}</div><div class="stat-label">Live Streams</div></div>
+      <div class="stat-item"><div class="stat-val" style="color:var(--amber);font-size:13px">${s.estimatedReach||'—'}</div><div class="stat-label">Est. new reach</div></div>`;
+  }
+
+  if (data.trendingTopics?.length) {
+    document.getElementById('trend-row').style.display = 'block';
+    document.getElementById('trend-chips').innerHTML = data.trendingTopics.map(t=>`<span class="trend-chip">${t}</span>`).join('');
+  }
+
+  let html = '';
+  (data.days||[]).forEach((day, i) => {
+    const badge = BADGES[i]||'b-mon';
+    const blocks = day.contentBlocks||[];
+    const typeTags = blocks.map(b => {
+      const cls = {longvideo:'t-video',short:'t-short',live:'t-live',vlog:'t-vlog',rest:'t-rest'}[b.type]||'t-rest';
+      const lbl = {longvideo:'Video',short:'Short',live:'Live',vlog:'Vlog',rest:'Rest'}[b.type]||b.type;
+      return `<span class="ttag ${cls}">${lbl}</span>`;
+    }).join('');
+    const mainTitle = blocks[0]?.title || day.day;
+    const bid=`db${i}`, cid=`dc${i}`;
+    html += `<div class="day-card">
+      <div class="day-header" onclick="td('${bid}','${cid}')">
+        <span class="day-badge ${badge}">${day.day}</span>
+        <span class="day-title-text">${mainTitle}</span>
+        <div class="type-tags">${typeTags}</div>
+        <span class="day-chev" id="${cid}">▼</span>
+      </div>
+      <div class="day-body" id="${bid}">
+        ${day.postingTime && day.postingTime !== 'No posting today' ? `<div class="time-pill">🕐 Post at ${day.postingTime}</div>` : ''}
+        ${blocks.map(b=>renderBlock(b)).join('')}
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('cal-content').innerHTML = html;
+  const fb=document.getElementById('db0'),fc=document.getElementById('dc0');
+  if(fb){fb.classList.add('open');fc.classList.add('open');}
+}
+
+function renderBlock(b) {
+  const labels = {longvideo:'🎬 Long Video',short:'⚡ Short',live:'🔴 Live Stream',vlog:'📹 Vlog',rest:'😴 Rest Day'};
+  return `<div class="cblock">
+    <div class="cb-header"><span class="cb-icon">${b.emoji||'📌'}</span><span class="cb-title">${labels[b.type]||b.type}</span></div>
+    ${b.title?`<div class="field"><div class="fl">Title</div><div class="fv big">${b.title}</div></div>`:''}
+    ${b.whyNow?`<div class="field"><div class="fl">Why this works now</div><div class="fv">${b.whyNow}</div></div>`:''}
+    ${b.hook?`<div class="field"><div class="fl">Opening hook</div><div class="fv teal">"${b.hook}"</div></div>`:''}
+    ${b.outline?`<div class="field"><div class="fl">Outline / structure</div><div class="fv">${b.outline}</div></div>`:''}
+    ${b.script?`<div class="field"><div class="fl">Script / talking points</div><div class="fv script">${b.script}</div></div>`:''}
+    ${b.thumbnailConcept?`<div class="field"><div class="fl">Thumbnail concept</div><div class="fv">${b.thumbnailConcept}</div></div>`:''}
+    ${b.postingTip?`<div class="field"><div class="fl">Posting tip</div><div class="fv amber">${b.postingTip}</div></div>`:''}
+    ${b.hashtags?`<div class="field"><div class="fl">Hashtags</div><div class="fv" style="color:var(--text2);font-size:12px">${b.hashtags}</div></div>`:''}
+  </div>`;
+}
+
+function td(bid,cid){
+  document.getElementById(bid).classList.toggle('open');
+  document.getElementById(cid).classList.toggle('open');
+}
+</script>
+</body>
+</html>

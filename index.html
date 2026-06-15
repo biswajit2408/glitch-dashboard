@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glitch & Games — Creator Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+:root{--purple:#7F77DD;--teal:#5DCAA5;--amber:#EF9F27;--bg:#0F0F1A;--bg2:#16162A;--bg3:#1E1E35;--border:rgba(127,119,221,0.18);--text:#F0F0FF;--text2:#9999BB;--red:#FF3366;--cyan:#33FFEE}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.content{margin-left:220px;flex:1;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--purple),var(--teal));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:8px}
+.logo-name{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700}
+.logo-handle{font-size:11px;color:var(--text2)}
+.nav{padding:12px 10px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--text2);margin-bottom:2px;transition:all .15s;border:none;background:none;width:100%;font-family:'Inter',sans-serif}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,#7F77DD22,#5DCAA512);color:var(--purple);font-weight:500}
+.nav-icon{font-size:16px;min-width:20px}
+.sidebar-bottom{padding:14px;border-top:1px solid var(--border)}
+.sheets-status{font-size:11px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3)}
+.sheets-status.connected{border-color:#5DCAA544;background:#5DCAA508;color:var(--teal)}
+.sheets-status.disconnected{border-color:#FF336644;background:#FF336608;color:var(--red)}
+
+/* HEADER */
+.page-header{padding:22px 28px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.page-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700}
+.page-sub{font-size:12px;color:var(--text2);margin-top:3px}
+
+/* PANELS */
+.panel{padding:0 28px 28px}
+.hidden{display:none}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:12px}
+.card.green{border-left:3px solid var(--teal)}
+.card.purple{border-left:3px solid var(--purple)}
+.card.amber{border-left:3px solid var(--amber)}
+.card.red{border-left:3px solid var(--red)}
+.card-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px}
+.card-body{font-size:13px;color:var(--text2);line-height:1.7}
+.card-body b{font-weight:500;color:var(--text)}
+
+/* SETUP GUIDE */
+.step-wrap{counter-reset:steps}
+.step{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.step:last-child{border-bottom:none}
+.step-num{min-width:28px;height:28px;border-radius:50%;background:var(--purple);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-text{font-size:13px;color:var(--text2);line-height:1.7}
+.step-text b{font-weight:500;color:var(--text)}
+.step-text code{font-family:monospace;font-size:12px;background:var(--bg3);padding:2px 7px;border-radius:4px;color:var(--teal)}
+.copy-code{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12px;color:var(--teal);margin-top:8px;word-break:break-all;cursor:pointer;line-height:1.6}
+.copy-code:hover{border-color:var(--teal)}
+
+/* SHEETS CONNECT */
+.connect-form{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.url-input{flex:1;min-width:250px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none}
+.url-input:focus{border-color:var(--purple)}
+.btn{padding:10px 18px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .18s;white-space:nowrap}
+.btn-primary{background:linear-gradient(90deg,var(--purple),var(--teal));color:#fff}
+.btn-primary:hover{opacity:.9}
+.btn-secondary{background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+.btn-secondary:hover{border-color:var(--purple);color:var(--purple)}
+.btn-danger{background:#FF336612;border:1px solid #FF336644;color:var(--red)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-teal{background:var(--teal)22;border:1px solid var(--teal)44;color:var(--teal)}
+.btn-amber{background:var(--amber)22;border:1px solid var(--amber)44;color:var(--amber)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* GRID */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.stat-val{font-size:28px;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:12px;color:var(--text2)}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:3px}
+
+/* AI SECTION */
+.ai-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ai-tab{padding:7px 14px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;cursor:pointer;background:var(--bg3);color:var(--text2);font-family:'Inter',sans-serif;transition:all .15s}
+.ai-tab.active{border-color:var(--purple);background:#7F77DD18;color:var(--text);font-weight:500}
+.control-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px}
+.ctrl label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500}
+.ctrl select,.ctrl input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;appearance:none}
+.ctrl select:focus,.ctrl input:focus{border-color:var(--purple)}
+
+/* MODE CARDS */
+.mode-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+.mode-card{background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;padding:11px 12px;cursor:pointer;transition:all .15s;text-align:center}
+.mode-card:hover{border-color:var(--purple)}
+.mode-card.active{border-color:var(--purple);background:#7F77DD14}
+.mode-icon{font-size:20px;margin-bottom:4px}
+.mode-name{font-size:12px;font-weight:600;color:var(--text)}
+
+/* PLAN CARDS */
+.plan-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:10px}
+.plan-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.plan-title{font-size:14px;font-weight:600;color:var(--text)}
+.plan-meta{font-size:11px;color:var(--text2);margin-top:3px}
+.plan-actions{display:flex;gap:6px;flex-wrap:wrap}
+.plan-summary{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.plan-tags{display:flex;gap:6px;flex-wrap:wrap}
+.ptag{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+.pt-mode{background:#7F77DD22;color:var(--purple)}
+.pt-ai{background:#5DCAA522;color:var(--teal)}
+.pt-game{background:#EF9F2722;color:var(--amber)}
+
+/* IDEA CARDS */
+.idea-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px}
+.idea-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.idea-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.idea-hook{font-size:12px;color:var(--teal);font-style:italic;margin-bottom:6px}
+.idea-meta{font-size:11px;color:var(--text2)}
+.status-badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;cursor:pointer}
+.s-saved{background:#7F77DD22;color:var(--purple)}
+.s-filming{background:#EF9F2722;color:var(--amber)}
+.s-editing{background:#33FFEE22;color:var(--cyan)}
+.s-posted{background:#5DCAA522;color:var(--teal)}
+.s-skip{background:#FF336622;color:var(--red)}
+
+/* ANALYTICS */
+.analytics-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.history-table{width:100%;border-collapse:collapse;font-size:12px}
+.history-table th{background:var(--bg3);color:var(--text2);padding:8px 12px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.history-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
+.history-table tr:last-child td{border-bottom:none}
+.history-table .num{color:var(--text);font-weight:500}
+
+/* LOADING / TOAST */
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);z-index:999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.show{display:flex;align-items:center;gap:10px}
+.toast.success{border-color:var(--teal)44;color:var(--teal)}
+.toast.error{border-color:var(--red)44;color:var(--red)}
+
+/* DAY PLAN PREVIEW */
+.day-pill{display:inline-flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--text2);margin:3px}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text2)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px}
+.empty-sub{font-size:13px;line-height:1.6}
+
+.sep{height:1px;background:var(--border);margin:18px 0}
+.sec-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.loading-big{display:none;text-align:center;padding:40px}
+.loading-big.show{display:block}
+.big-spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+.ls{font-size:12px;color:var(--text2);padding:3px 0;transition:color .3s}
+.ls.active{color:var(--teal);font-weight:500}
+.ls.done{color:var(--purple)}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎮</div>
+    <div class="logo-name">Glitch & Games</div>
+    <div class="logo-handle">@glitchandgames</div>
+  </div>
+  <div class="nav">
+    <button class="nav-item active" onclick="showPanel('dashboard')"><span class="nav-icon">📊</span> Dashboard</button>
+    <button class="nav-item" onclick="showPanel('generate')"><span class="nav-icon">⚡</span> Generate Plan</button>
+    <button class="nav-item" onclick="showPanel('plans')"><span class="nav-icon">📅</span> Saved Plans</button>
+    <button class="nav-item" onclick="showPanel('ideas')"><span class="nav-icon">💡</span> Ideas Library</button>
+    <button class="nav-item" onclick="showPanel('analytics')"><span class="nav-icon">📈</span> Analytics</button>
+    <button class="nav-item" onclick="showPanel('setup')"><span class="nav-icon">⚙️</span> Setup</button>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="sheets-status disconnected" id="sheets-status">
+      ⚠️ Google Sheets not connected
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- DASHBOARD -->
+  <div id="panel-dashboard" class="panel">
+    <div class="page-header">
+      <div><div class="page-title">Dashboard</div><div class="page-sub">Your creator overview — Biswajit Jana</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="refreshAll()">🔄 Refresh</button>
+    </div>
+    <div class="grid2" id="dash-stats">
+      <div class="stat-card"><div class="stat-val" style="color:var(--purple)">—</div><div class="stat-label">Subscribers</div><div class="stat-sub">Latest logged</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--teal)">—</div><div class="stat-label">Watch Hours</div><div class="stat-sub">Latest logged</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--amber)">—</div><div class="stat-label">Saved Plans</div><div class="stat-sub">Total generated</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--cyan)">—</div><div class="stat-label">Ideas Library</div><div class="stat-sub">Total ideas saved</div></div>
+    </div>
+    <div class="sep"></div>
+    <div class="sec-label">Recent content plans</div>
+    <div id="dash-recent-plans"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No plans yet</div><div class="empty-sub">Generate your first content plan to see it here.</div></div></div>
+    <div class="sep"></div>
+    <div class="sec-label">Recent ideas</div>
+    <div id="dash-recent-ideas"><div class="empty-state"><div class="empty-icon">💡</div><div class="empty-title">No ideas yet</div><div class="empty-sub">Save ideas from generated plans to build your library.</div></div></div>
+  </div>
+
+  <!-- GENERATE -->
+  <div id="panel-generate" class="panel hidden">
+    <div class="page-header">
+      <div><div class="page-title">Generate Content Plan</div><div class="page-sub">AI-powered weekly plan — auto-saved to Google Sheets</div></div>
+    </div>
+
+    <!-- AI PROVIDER -->
+    <div class="card">
+      <div class="card-title">🤖 AI Provider</div>
+      <div class="ai-tabs">
+        <button class="ai-tab active" onclick="setAI('claude',this)">🟣 Claude</button>
+        <button class="ai-tab" onclick="setAI('openai',this)">🟢 ChatGPT</button>
+        <button class="ai-tab" onclick="setAI('gemini',this)">🔵 Gemini</button>
+        <button class="ai-tab" onclick="setAI('offline',this)" style="border-color:#EF9F2744;color:var(--amber)">⚡ Offline</button>
+      </div>
+      <div id="ai-key-section">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input class="url-input" type="password" id="ai-key-input" placeholder="Paste your API key..." style="flex:1;min-width:200px"/>
+          <button class="btn btn-secondary btn-sm" onclick="saveAIKey()">Save Key</button>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px" id="ai-key-hint">Get key from console.anthropic.com → API Keys</div>
+      </div>
+      <div id="offline-note" style="display:none;font-size:12px;color:var(--amber);margin-top:8px">⚡ Offline mode — uses built-in smart templates. No API key needed.</div>
+    </div>
+
+    <!-- MODE -->
+    <div class="sec-label">Content type</div>
+    <div class="mode-grid" id="mode-grid">
+      <div class="mode-card active" onclick="setMode(this,'gaming')"><div class="mode-icon">🎮</div><div class="mode-name">Gaming</div></div>
+      <div class="mode-card" onclick="setMode(this,'vlog')"><div class="mode-icon">📹</div><div class="mode-name">Vlog</div></div>
+      <div class="mode-card" onclick="setMode(this,'mixed')"><div class="mode-icon">🔀</div><div class="mode-name">Mixed</div></div>
+      <div class="mode-card" onclick="setMode(this,'educational')"><div class="mode-icon">🧠</div><div class="mode-name">Educational</div></div>
+      <div class="mode-card" onclick="setMode(this,'challenge')"><div class="mode-icon">🏆</div><div class="mode-name">Challenge</div></div>
+      <div class="mode-card" onclick="setMode(this,'collab')"><div class="mode-icon">🤝</div><div class="mode-name">Collab</div></div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="control-grid">
+      <div class="ctrl"><label id="focus-label">Game focus</label>
+        <select id="gen-focus">
+          <option value="whatever is trending in Indian gaming">🔥 Trending now</option>
+          <option value="BGMI">🎯 BGMI</option>
+          <option value="Free Fire">🔥 Free Fire</option>
+          <option value="Valorant">⚡ Valorant</option>
+          <option value="GTA V">🚗 GTA V</option>
+          <option value="Mixed games">🎮 Mixed games</option>
+        </select>
+      </div>
+      <div class="ctrl"><label>Vibe this week</label>
+        <select id="gen-energy">
+          <option value="funny and chaotic">😂 Funny & chaotic</option>
+          <option value="chill and relaxed">😌 Chill & relaxed</option>
+          <option value="challenge based">🏆 Challenge based</option>
+          <option value="emotional and honest">❤️ Emotional & honest</option>
+          <option value="educational">🧠 Educational</option>
+        </select>
+      </div>
+      <div class="ctrl"><label>Special request</label>
+        <input type="text" id="gen-special" placeholder="e.g. mom reaction, collab..."/>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="gen-btn" onclick="generatePlan()" style="width:100%;padding:13px;font-size:15px">⚡ Generate & Save to Google Sheets</button>
+
+    <!-- LOADING -->
+    <div class="loading-big" id="gen-loading">
+      <div class="big-spinner"></div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:14px" id="gen-loading-label">Generating...</div>
+      <div class="ls" id="gl1">🔍 Analysing trends</div>
+      <div class="ls" id="gl2">💡 Finding content angles</div>
+      <div class="ls" id="gl3">🎬 Writing video ideas</div>
+      <div class="ls" id="gl4">📝 Scripting Shorts</div>
+      <div class="ls" id="gl5">💾 Saving to Google Sheets</div>
+    </div>
+
+    <!-- RESULT -->
+    <div id="gen-result" class="hidden">
+      <div class="sep"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700" id="res-title"></div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px" id="res-meta"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-teal btn-sm" onclick="generatePlan()">🔄 Regenerate</button>
+          <button class="btn btn-secondary btn-sm" onclick="showPanel('plans')">📅 View All Plans</button>
+        </div>
+      </div>
+      <div id="res-days"></div>
+    </div>
+  </div>
+
+  <!-- PLANS -->
+  <div id="panel-plans" class="panel hidden">
+    <div class="page-header">
+      <div><div class="page-title">Saved Plans</div><div class="page-sub">All your generated content plans from Google Sheets</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="loadPlans()">🔄 Refresh</button>
+    </div>
+    <div id="plans-list"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">Loading...</div></div></div>
+  </div>
+
+  <!-- IDEAS -->
+  <div id="panel-ideas" class="panel hidden">
+    <div class="page-header">
+      <div><div class="page-title">Ideas Library</div><div class="page-sub">Your saved video ideas — click status to update</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="loadIdeas()">🔄 Refresh</button>
+    </div>
+    <!-- Add idea manually -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title" style="margin-bottom:10px">➕ Add idea manually</div>
+      <div class="control-grid">
+        <div class="ctrl"><label>Video title</label><input type="text" id="idea-title" placeholder="Title with emoji..."/></div>
+        <div class="ctrl"><label>Type</label>
+          <select id="idea-type">
+            <option>Long Video</option><option>Short</option><option>Live Stream</option><option>Vlog</option>
+          </select>
+        </div>
+        <div class="ctrl"><label>Game / Topic</label><input type="text" id="idea-topic" placeholder="BGMI, daily life..."/></div>
+        <div class="ctrl"><label>Hook (opening line)</label><input type="text" id="idea-hook" placeholder="First line that grabs attention..."/></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="addIdeaManually()">💡 Save Idea</button>
+    </div>
+    <div id="ideas-list"><div class="empty-state"><div class="empty-icon">💡</div><div class="empty-title">Loading...</div></div></div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div id="panel-analytics" class="panel hidden">
+    <div class="page-header">
+      <div><div class="page-title">Analytics Log</div><div class="page-sub">Track your growth every week manually</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title" style="margin-bottom:12px">📊 Log this week's numbers</div>
+      <div class="analytics-form">
+        <div class="ctrl"><label>Week #</label><input type="text" id="a-week" placeholder="e.g. Week 3"/></div>
+        <div class="ctrl"><label>Subscribers</label><input type="number" id="a-subs" placeholder="0"/></div>
+        <div class="ctrl"><label>Watch Hours</label><input type="number" id="a-hours" placeholder="0"/></div>
+        <div class="ctrl"><label>Total Views</label><input type="number" id="a-views" placeholder="0"/></div>
+        <div class="ctrl"><label>Shorts Views</label><input type="number" id="a-shorts" placeholder="0"/></div>
+        <div class="ctrl"><label>Live Viewers (peak)</label><input type="number" id="a-live" placeholder="0"/></div>
+        <div class="ctrl"><label>New Videos posted</label><input type="number" id="a-videos" placeholder="0"/></div>
+        <div class="ctrl"><label>New Shorts posted</label><input type="number" id="a-shortsn" placeholder="0"/></div>
+      </div>
+      <div class="ctrl" style="margin-bottom:10px"><label>Notes / what worked this week</label><input type="text" id="a-notes" placeholder="e.g. BGMI video got 500 views, Shorts got more reach..."/></div>
+      <button class="btn btn-primary btn-sm" onclick="saveAnalytics()">📊 Save to Google Sheets</button>
+    </div>
+    <div class="sec-label">Growth history</div>
+    <div id="analytics-history"><div class="empty-state"><div class="empty-icon">📈</div><div class="empty-title">No data yet</div><div class="empty-sub">Log your first week's numbers above.</div></div></div>
+  </div>
+
+  <!-- SETUP -->
+  <div id="panel-setup" class="panel hidden">
+    <div class="page-header">
+      <div><div class="page-title">Setup</div><div class="page-sub">Connect Google Sheets — one time only</div></div>
+    </div>
+
+    <div class="card green" style="margin-bottom:14px">
+      <div class="card-title">What you'll set up</div>
+      <div class="card-body">A single Google Spreadsheet acts as your entire backend — 4 tabs: Content Plans, Ideas Library, Analytics Log, Settings. Free forever. No server needed. You own all your data.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px">📋 Step by step — follow exactly</div>
+      <div class="step-wrap">
+        <div class="step"><div class="step-num">1</div><div class="step-text">Go to <b>sheets.google.com</b> → click <b>Blank spreadsheet</b> → name it <b>"Glitch and Games — Creator Dashboard"</b></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">In your new sheet → click <b>Extensions</b> (top menu) → <b>Apps Script</b> → a new tab opens with a code editor</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">Delete everything in the editor → paste the entire contents of <code>google-apps-script.js</code> (from your project ZIP) → press <b>Ctrl+S</b> to save</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-text">Click <b>Deploy</b> (top right) → <b>New deployment</b> → Type: <b>Web app</b> → Execute as: <b>Me</b> → Who has access: <b>Anyone</b> → click <b>Deploy</b></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-text">Google will ask you to authorise → click <b>Authorize access</b> → choose your Gmail → click <b>Advanced</b> → <b>Go to project (unsafe)</b> → <b>Allow</b></div></div>
+        <div class="step"><div class="step-num">6</div><div class="step-text">Copy the <b>Web app URL</b> shown after deployment → it looks like: <div class="copy-code" onclick="this.select()">https://script.google.com/macros/s/YOUR_ID_HERE/exec</div></div></div>
+        <div class="step"><div class="step-num">7</div><div class="step-text">Paste that URL below and click <b>Connect & Setup</b></div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title" style="margin-bottom:10px">🔌 Connect your Google Sheets</div>
+      <div class="connect-form">
+        <input class="url-input" type="text" id="sheets-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec"/>
+        <button class="btn btn-primary" onclick="connectSheets()">Connect & Setup</button>
+      </div>
+      <div id="connect-status" style="font-size:12px;margin-top:8px;color:var(--text2)"></div>
+    </div>
+
+    <div class="card" id="connected-info" style="margin-top:14px;display:none">
+      <div class="card-title" style="color:var(--teal);margin-bottom:8px">✅ Connected to Google Sheets</div>
+      <div class="card-body" id="connected-url" style="font-size:12px;word-break:break-all;margin-bottom:12px"></div>
+      <button class="btn btn-danger btn-sm" onclick="disconnectSheets()">🔌 Disconnect</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ─────────────────────────────────────────────
+let sheetsURL = localStorage.getItem('g_sheets_url') || '';
+let currentAI = 'claude';
+let currentMode = 'gaming';
+let aiKeys = JSON.parse(localStorage.getItem('g_ai_keys') || '{}');
+let currentPlan = null;
+
+// ─── INIT ──────────────────────────────────────────────
+window.onload = () => {
+  if (sheetsURL) {
+    document.getElementById('sheets-url').value = sheetsURL;
+    updateSheetsStatus(true);
+    refreshAll();
+  }
+  if (aiKeys[currentAI]) document.getElementById('ai-key-input').value = aiKeys[currentAI];
+};
+
+// ─── NAVIGATION ────────────────────────────────────────
+function showPanel(id) {
+  document.querySelectorAll('[id^="panel-"]').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(id === 'dashboard' ? 'dashboard' : id === 'generate' ? 'generate' : id === 'plans' ? 'saved' : id === 'ideas' ? 'ideas' : id === 'analytics' ? 'analytics' : 'setup')) n.classList.add('active');
+  });
+  if (id === 'plans') loadPlans();
+  if (id === 'ideas') loadIdeas();
+  if (id === 'analytics') loadAnalytics();
+}
+
+// ─── SHEETS CONNECTION ─────────────────────────────────
+async function connectSheets() {
+  const url = document.getElementById('sheets-url').value.trim();
+  if (!url) { toast('Please paste your Google Apps Script URL', 'error'); return; }
+  const status = document.getElementById('connect-status');
+  status.textContent = '⏳ Connecting and setting up sheets...';
+  status.style.color = 'var(--text2)';
+  try {
+    const res = await fetch(url + '?action=setup');
+    const data = await res.json();
+    if (data.success || data.message) {
+      localStorage.setItem('g_sheets_url', url);
+      sheetsURL = url;
+      updateSheetsStatus(true);
+      status.textContent = '✅ Connected! All 4 sheets created in your Google Spreadsheet.';
+      status.style.color = 'var(--teal)';
+      document.getElementById('connected-info').style.display = 'block';
+      document.getElementById('connected-url').textContent = url;
+      toast('Google Sheets connected successfully!', 'success');
+      refreshAll();
+    } else throw new Error(data.error || 'Connection failed');
+  } catch(err) {
+    status.textContent = '❌ Failed: ' + err.message + ' — Check your URL and try again.';
+    status.style.color = 'var(--red)';
+  }
+}
+
+function disconnectSheets() {
+  if (!confirm('Disconnect Google Sheets? Your data stays in the spreadsheet but this app won\'t sync.')) return;
+  localStorage.removeItem('g_sheets_url');
+  sheetsURL = '';
+  updateSheetsStatus(false);
+  document.getElementById('connected-info').style.display = 'none';
+  toast('Disconnected from Google Sheets', 'error');
+}
+
+function updateSheetsStatus(connected) {
+  const el = document.getElementById('sheets-status');
+  if (connected) {
+    el.className = 'sheets-status connected';
+    el.textContent = '✅ Google Sheets connected';
+    document.getElementById('connected-info').style.display = 'block';
+    document.getElementById('connected-url').textContent = sheetsURL;
+  } else {
+    el.className = 'sheets-status disconnected';
+    el.textContent = '⚠️ Google Sheets not connected';
+  }
+}
+
+async function sheetsGet(action) {
+  if (!sheetsURL) return null;
+  const res = await fetch(`${sheetsURL}?action=${action}`);
+  return await res.json();
+}
+
+async function sheetsPost(action, data) {
+  if (!sheetsURL) return null;
+  const res = await fetch(sheetsURL, {
+    method: 'POST',
+    body: JSON.stringify({ action, data }),
+    headers: { 'Content-Type': 'application/json' }
+  });
+  return await res.json();
+}
+
+// ─── AI PROVIDER ───────────────────────────────────────
+function setAI(ai, el) {
+  document.querySelectorAll('.ai-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentAI = ai;
+  const keySection = document.getElementById('ai-key-section');
+  const offlineNote = document.getElementById('offline-note');
+  const hints = {
+    claude: 'Get key from <a href="https://console.anthropic.com" target="_blank" style="color:var(--teal)">console.anthropic.com</a>',
+    openai: 'Get key from <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--teal)">platform.openai.com/api-keys</a>',
+    gemini: 'Get free key from <a href="https://aistudio.google.com" target="_blank" style="color:var(--teal)">aistudio.google.com</a>'
+  };
+  if (ai === 'offline') { keySection.style.display = 'none'; offlineNote.style.display = 'block'; }
+  else {
+    keySection.style.display = 'block'; offlineNote.style.display = 'none';
+    document.getElementById('ai-key-input').value = aiKeys[ai] || '';
+    document.getElementById('ai-key-hint').innerHTML = hints[ai] || '';
+  }
+}
+
+function saveAIKey() {
+  const val = document.getElementById('ai-key-input').value.trim();
+  if (!val) return;
+  aiKeys[currentAI] = val;
+  localStorage.setItem('g_ai_keys', JSON.stringify(aiKeys));
+  toast('API key saved!', 'success');
+}
+
+// ─── MODE ──────────────────────────────────────────────
+function setMode(el, mode) {
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentMode = mode;
+  const focusLabel = document.getElementById('focus-label');
+  const focusSelect = document.getElementById('gen-focus');
+  const opts = {
+    gaming: {l:'Game focus', o:[['trending in Indian gaming','🔥 Trending now'],['BGMI','🎯 BGMI'],['Free Fire','🔥 Free Fire'],['Valorant','⚡ Valorant'],['GTA V','🚗 GTA V'],['Mixed games','🎮 Mixed']]},
+    vlog: {l:'Vlog topic', o:[['daily life in Rajkot','🏙️ Daily life Rajkot'],['street food Rajkot','🍜 Street food'],['creator behind scenes','🎥 Behind the scenes'],['Bengali in Gujarat','🤝 Bengali in Gujarat'],['travel Gujarat','✈️ Travel Gujarat']]},
+    mixed: {l:'Primary focus', o:[['gaming and vlog mix','🔀 Gaming + Vlog'],['gaming challenges and vlogs','🎮 Gaming + Challenges'],['trending topics gaming lifestyle','🔥 All trending niches'],['comedy gaming and life fails','😂 Comedy mix']]},
+    educational: {l:'Tutorial topic', o:[['gaming tips beginners India','🎯 Gaming tips'],['YouTube growth gaming','📈 YouTube growth'],['PC setup hardware guides','💻 Setup guides'],['BGMI mobile game tips','🏆 Mobile game tips']]},
+    challenge: {l:'Challenge theme', o:[['extreme gaming challenges','🏆 Gaming challenges'],['real life gaming challenges','💪 Real life + gaming'],['24 hour challenges','⏰ 24-hour challenges'],['viewer suggested challenges','👥 Viewer challenges']]},
+    collab: {l:'Collab focus', o:[['reaction videos community','👥 Reactions'],['duet challenges collab gaming','🤝 Collabs'],['trending memes viral gaming','😂 Memes & viral'],['fan qa community interaction','💬 Fan Q&A']]}
+  };
+  const cfg = opts[mode] || opts.gaming;
+  focusLabel.textContent = cfg.l;
+  focusSelect.innerHTML = cfg.o.map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+}
+
+// ─── GENERATE ──────────────────────────────────────────
+function buildPrompt(focus, energy, special) {
+  return `You are an expert YouTube content strategist for "Glitch & Games" (@glitchandgames), a Hindi/English YouTube channel by Biswajit Jana — polite, introverted Bengali creator from Rajkot, Gujarat, India. Style: funny through awkward moments, personality-over-skill, inspired by GamerFleet. Language: natural Hindi + English mix. Tagline: PLAY FOREVER.
+
+THIS WEEK: Content mode: ${currentMode}, Focus: ${focus}, Vibe: ${energy}, Special: ${special}
+
+Return ONLY valid raw JSON, no markdown:
+{"weekTitle":"catchy title","weekSummary":"1-2 sentence strategy","weekStats":{"totalVideos":0,"totalShorts":0,"liveStreams":0,"estimatedReach":"X-Y viewers"},"trendingTopics":["t1","t2","t3","t4"],"days":[{"day":"Monday","postingTime":"7:00 PM IST","contentBlocks":[{"type":"longvideo","emoji":"🎬","title":"title","whyNow":"why trending","hook":"exact opening line","outline":"numbered outline","script":"key points or full short script","thumbnailConcept":"vivid description","postingTip":"specific tip","hashtags":"#tag1 #tag2"}]}]}
+
+Schedule: Mon=LongVideo+Short, Tue=Short, Wed=LongVideo+Short, Thu=Short, Fri=Short, Sat=Live+Short, Sun=Rest
+Types: longvideo,short,live,vlog,rest. Shorts need full 30-45 sec Hindi/English mix script. Sunday=rest+planning notes.`;
+}
+
+async function callAI(prompt) {
+  const key = aiKeys[currentAI] || document.getElementById('ai-key-input').value.trim();
+  if (currentAI === 'claude') {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:prompt}]})});
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.content.map(i=>i.text||'').join('');
+  } else if (currentAI === 'openai') {
+    const r = await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},body:JSON.stringify({model:'gpt-4o',max_tokens:4000,messages:[{role:'user',content:prompt}]})});
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.choices[0].message.content;
+  } else if (currentAI === 'gemini') {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.candidates[0].content.parts[0].text;
+  }
+}
+
+function offlinePlan(focus, energy) {
+  return {weekTitle:`${energy.includes('funny')?'Chaotic':'Chill'} Week — ${focus.includes('BGMI')?'BGMI':focus.includes('Free Fire')?'Free Fire':focus.includes('Valorant')?'Valorant':'Gaming'} Edition 🎮`,weekSummary:`A ${energy} week focused on ${focus}. Personality-first content for Glitch & Games.`,weekStats:{totalVideos:2,totalShorts:5,liveStreams:1,estimatedReach:'500–1500 new viewers'},trendingTopics:['#BGMI','#IndianGaming','#GamingHindi','#GlitchAndGames'],days:[{day:'Monday',postingTime:'7:00 PM IST',contentBlocks:[{type:'longvideo',emoji:'🎬',title:'I Played BGMI For 3 Hours and This Happened 😭',whyNow:'BGMI is trending in Indian gaming right now',hook:'"Yaar aaj kuch alag karte hain. Teen ghante, ek game, aur main... well, you\'ll see."',outline:'1. Intro — set low expectations\n2. Hour 1 — warm up and early fails\n3. Hour 2 — chaos begins\n4. Hour 3 — desperate mode\n5. Final result + honest reaction',script:'React to every death honestly. Let the fails be the comedy. Don\'t force reactions.',thumbnailConcept:'Dark bg, shocked face, "3 HOURS" in purple, clock emoji',postingTip:'Pin a comment asking what game to play next week',hashtags:'#BGMI #IndianGaming #GamingHindi #GlitchAndGames'},{type:'short',emoji:'⚡',title:'Final circle death 😭',hook:'"Top 3 tha main... TOP 3."',script:'"Top 3 tha main... TOP 3.\nPoora game khelaa — aur phir ek grenade.\nEk. Single. Grenade.\n[3 second silence]\nGlitch and Games. Subscribe karo."',thumbnailConcept:'Crying face, "1 GRENADE" text',postingTip:'Clip the actual death moment + reaction',hashtags:'#GamingFails #Shorts #BGMI #GlitchAndGames'}]},{day:'Tuesday',postingTime:'6:00 PM IST',contentBlocks:[{type:'short',emoji:'⚡',title:'Introvert gamer confession',hook:'"Main bahut introvert hoon."',script:'"Main bahut introvert hoon.\nBut game ke andar? Bhai non-stop bolता hoon.\nOutside — silent. Inside — chaos.\nWelcome to Glitch and Games."',thumbnailConcept:'Split — quiet face / gaming chaos',postingTip:'5-7 PM for max Shorts reach',hashtags:'#IntrovertGamer #Relatable #GlitchAndGames #Shorts'}]},{day:'Wednesday',postingTime:'7:00 PM IST',contentBlocks:[{type:'longvideo',emoji:'🎬',title:'I Only Used the WORST Weapon — Complete Disaster 😂',whyNow:'Challenge videos get 40% better retention',hook:'"Aaj ek rule hai. Sirf worst weapon. Poora match. Let\'s go."',outline:'1. Weapon reveal + stakes\n2. First match — immediate struggle\n3. Middle — adapting or failing\n4. Final match — do or die\n5. Results + verdict',script:'Commentary: describe what\'s happening + honest reaction. Silence IS the joke sometimes.',thumbnailConcept:'Weapon with red X, horrified expression, amber text',postingTip:'Mark 3 funny moments while editing for Shorts',hashtags:'#GamingChallenge #IndianGaming #GlitchAndGames'}]},{day:'Thursday',postingTime:'6:00 PM IST',contentBlocks:[{type:'short',emoji:'⚡',title:'Random teammates be like 😭',hook:'"Bhai random squad mil gaya."',script:'"Bhai random squad mil gaya.\nPehli cheez — sidha rush, akela, no communication.\n10 second mein dies.\nAur phir mujhe blame karta hai.\nEvery. Single. Time.\nGlitch and Games — subscribe if you know the pain."',thumbnailConcept:'Head in hands, squad with question marks',postingTip:'Tag as relatable gaming',hashtags:'#RandomSquad #GamingPain #Relatable #Shorts'}]},{day:'Friday',postingTime:'6:00 PM IST',contentBlocks:[{type:'short',emoji:'⚡',title:'Live stream kal 🔴',hook:'"Kal live aa rahe hain."',script:'"Kal live aa rahe hain.\nSaturday. 8 PM IST.\nFails honge. Rage hoga. Life choices pe question hoga.\nBut saath khelenge.\nAana zaroor."',thumbnailConcept:'LIVE text red, excited face, Saturday 8PM',postingTip:'Post exactly 24hrs before stream',hashtags:'#LiveStream #GlitchAndGames #Saturday #Shorts'}]},{day:'Saturday',postingTime:'8:00 PM IST',contentBlocks:[{type:'live',emoji:'🔴',title:'LIVE — Playing with YOU! 🎮',whyNow:'Saturday 8 PM = peak Indian gaming time',hook:'"Aa gaye! Chalo shuru karte hain saath."',outline:'1. Starting Soon (5 min)\n2. Welcome + intro (5 min)\n3. Gameplay (90 min)\n4. Viewer games (20 min)\n5. Wrap up + next week tease',script:'Welcome regulars by name. Ask chat what they want. React to comments while playing.',thumbnailConcept:'LIVE badge, game bg, face, 8PM Saturday amber text',postingTip:'Archive as unlisted first, review, then make public',hashtags:'#LiveStream #GamingLive #GlitchAndGames'}]},{day:'Sunday',postingTime:'No posting',contentBlocks:[{type:'rest',emoji:'😴',title:'Rest + Plan Next Week',whyNow:'Consistency needs recovery',hook:'',outline:'',script:'✅ Watch back your best video — what worked?\n✅ Reply to all unanswered comments\n✅ Write 5 ideas for next week\n✅ Check YouTube Studio analytics\n✅ Plan Monday thumbnail tonight\n\nRemember: GamerFleet took 4 years. One week at a time.',thumbnailConcept:'',postingTip:'Engage with community posts today, not content creation',hashtags:''}]}]};
+}
+
+async function generatePlan() {
+  const focus = document.getElementById('gen-focus').value;
+  const energy = document.getElementById('gen-energy').value;
+  const special = document.getElementById('gen-special').value || 'none';
+  const key = aiKeys[currentAI] || document.getElementById('ai-key-input').value.trim();
+
+  if (currentAI !== 'offline' && !key) { toast('Please save your API key first or use Offline mode', 'error'); return; }
+
+  document.getElementById('gen-result').classList.add('hidden');
+  document.getElementById('gen-loading').classList.add('show');
+  document.getElementById('gen-btn').disabled = true;
+
+  const aiName = {claude:'Claude AI',openai:'ChatGPT (OpenAI)',gemini:'Gemini (Google)',offline:'Offline Templates'};
+  document.getElementById('gen-loading-label').textContent = `Generating with ${aiName[currentAI]}...`;
+
+  const steps = ['gl1','gl2','gl3','gl4','gl5'];
+  let si = 0;
+  const iv = setInterval(() => {
+    if(si>0){document.getElementById(steps[si-1]).classList.remove('active');document.getElementById(steps[si-1]).classList.add('done');}
+    if(si<steps.length){document.getElementById(steps[si]).classList.add('active');si++;}
+    else clearInterval(iv);
+  }, 700);
+
+  try {
+    let plan;
+    if (currentAI === 'offline') {
+      await new Promise(r => setTimeout(r, 3500));
+      plan = offlinePlan(focus, energy);
+    } else {
+      const raw = await callAI(buildPrompt(focus, energy, special));
+      plan = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    }
+
+    clearInterval(iv);
+    steps.forEach(s=>{document.getElementById(s).classList.remove('active');document.getElementById(s).classList.add('done');});
+
+    // Save to Sheets
+    if (sheetsURL) {
+      document.getElementById('gl5').textContent = '💾 Saving to Google Sheets...';
+      document.getElementById('gl5').classList.add('active');
+      await sheetsPost('savePlan', {
+        weekTitle: plan.weekTitle,
+        weekSummary: plan.weekSummary,
+        contentMode: currentMode,
+        gameFocus: focus,
+        aiProvider: currentAI,
+        fullPlan: plan
+      });
+      document.getElementById('gl5').classList.remove('active');
+      document.getElementById('gl5').classList.add('done');
+    }
+
+    currentPlan = plan;
+    renderGeneratedPlan(plan);
+    document.getElementById('gen-loading').classList.remove('show');
+    document.getElementById('gen-result').classList.remove('hidden');
+    document.getElementById('gen-btn').disabled = false;
+    toast('Plan generated' + (sheetsURL ? ' & saved to Sheets!' : '!'), 'success');
+
+  } catch(err) {
+    clearInterval(iv);
+    document.getElementById('gen-loading').classList.remove('show');
+    document.getElementById('gen-btn').disabled = false;
+    toast('Error: ' + err.message, 'error');
+  }
+}
+
+function renderGeneratedPlan(plan) {
+  document.getElementById('res-title').textContent = plan.weekTitle || 'Your Weekly Plan';
+  document.getElementById('res-meta').textContent = plan.weekSummary || '';
+
+  const BADGES = ['b-mon','b-tue','b-wed','b-thu','b-fri','b-sat','b-sun'];
+  const typeLabel = {longvideo:'🎬 Video',short:'⚡ Short',live:'🔴 Live',vlog:'📹 Vlog',rest:'😴 Rest'};
+
+  let html = '';
+  (plan.days||[]).forEach((day,i) => {
+    const blocks = day.contentBlocks||[];
+    const tags = blocks.map(b=>`<span class="day-pill">${b.emoji||''} ${typeLabel[b.type]||b.type}</span>`).join('');
+    const bid=`rd${i}`, cid=`rc${i}`;
+    html += `<div class="plan-card">
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="td2('${bid}','${cid}')">
+        <span class="ptag pt-mode" style="min-width:80px;text-align:center">${day.day}</span>
+        <span style="font-size:13px;font-weight:600;flex:1">${blocks[0]?.title||day.day}</span>
+        <div>${tags}</div>
+        ${sheetsURL?`<button class="btn btn-teal btn-sm" onclick="event.stopPropagation();saveIdeaFromPlan(${JSON.stringify(blocks[0]||{}).replace(/"/g,'&quot;')})">💡 Save</button>`:''}
+        <span id="${cid}" style="color:var(--text2);font-size:13px;transition:transform .2s">▼</span>
+      </div>
+      <div id="${bid}" style="display:none;margin-top:12px">
+        ${blocks.map(b=>`
+          <div style="background:var(--bg3);border-radius:8px;padding:12px 14px;margin-bottom:8px;border:1px solid var(--border)">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${b.emoji||''} ${typeLabel[b.type]||b.type}</div>
+            ${b.title?`<div style="font-size:14px;font-weight:600;margin-bottom:6px">${b.title}</div>`:''}
+            ${b.hook?`<div style="font-size:12px;color:var(--teal);font-style:italic;margin-bottom:6px">"${b.hook}"</div>`:''}
+            ${b.script?`<div style="background:var(--bg);border-radius:6px;padding:9px;font-size:12px;line-height:1.8;white-space:pre-wrap;border:1px solid var(--border);margin-bottom:6px">${b.script}</div>`:''}
+            ${b.thumbnailConcept?`<div style="font-size:12px;color:var(--amber);margin-bottom:4px">🖼️ ${b.thumbnailConcept}</div>`:''}
+            ${b.postingTip?`<div style="font-size:12px;color:var(--text2)">💡 ${b.postingTip}</div>`:''}
+          </div>`).join('')}
+      </div>
+    </div>`;
+  });
+  document.getElementById('res-days').innerHTML = html;
+}
+
+function td2(bid,cid) {
+  const b=document.getElementById(bid),c=document.getElementById(cid);
+  b.style.display = b.style.display==='none'?'block':'none';
+  c.style.transform = b.style.display==='block'?'rotate(180deg)':'';
+}
+
+// ─── PLANS ─────────────────────────────────────────────
+async function loadPlans() {
+  const el = document.getElementById('plans-list');
+  el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+  if (!sheetsURL) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-title">Not connected</div><div class="empty-sub">Go to Setup tab and connect Google Sheets first.</div></div>'; return; }
+  const data = await sheetsGet('getPlans');
+  if (!data?.plans?.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No plans saved yet</div><div class="empty-sub">Generate your first content plan.</div></div>'; return; }
+  el.innerHTML = data.plans.map(p => `
+    <div class="plan-card">
+      <div class="plan-top">
+        <div>
+          <div class="plan-title">${p['Week Title']||'Untitled Plan'}</div>
+          <div class="plan-meta">${p['Generated On']||''}</div>
+        </div>
+        <div class="plan-actions">
+          <button class="btn btn-danger btn-sm" onclick="deletePlan('${p['ID']}')">🗑️</button>
+        </div>
+      </div>
+      <div class="plan-summary">${p['Week Summary']||''}</div>
+      <div class="plan-tags">
+        <span class="ptag pt-mode">${p['Content Mode']||''}</span>
+        <span class="ptag pt-ai">${p['AI Provider']||''}</span>
+        <span class="ptag pt-game">${p['Game Focus']||''}</span>
+      </div>
+    </div>`).join('');
+}
+
+async function deletePlan(id) {
+  if (!confirm('Delete this plan?')) return;
+  const r = await sheetsPost('deletePlan', {id});
+  if (r?.success) { toast('Plan deleted', 'success'); loadPlans(); }
+  else toast('Delete failed', 'error');
+}
+
+// ─── IDEAS ─────────────────────────────────────────────
+async function loadIdeas() {
+  const el = document.getElementById('ideas-list');
+  el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+  if (!sheetsURL) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-title">Not connected</div><div class="empty-sub">Go to Setup and connect Google Sheets first.</div></div>'; return; }
+  const data = await sheetsGet('getIdeas');
+  if (!data?.ideas?.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">💡</div><div class="empty-title">No ideas yet</div><div class="empty-sub">Save ideas from generated plans or add manually above.</div></div>'; return; }
+  const statuses = ['Saved','Filming','Editing','Posted','Skip'];
+  const statusCls = {'Saved':'s-saved','Filming':'s-filming','Editing':'s-editing','Posted':'s-posted','Skip':'s-skip'};
+  el.innerHTML = data.ideas.map(idea => `
+    <div class="idea-card">
+      <div class="idea-top">
+        <div style="flex:1">
+          <div class="idea-title">${idea['Video Title']||'Untitled'}</div>
+          ${idea['Hook']?`<div class="idea-hook">"${idea['Hook']}"</div>`:''}
+          <div class="idea-meta">${idea['Content Type']||''} ${idea['Game/Topic']?'· '+idea['Game/Topic']:''} · ${idea['Saved On']||''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+          <select class="status-badge ${statusCls[idea['Status']]||'s-saved'}" onchange="updateStatus('${idea['ID']}',this.value,this)">
+            ${statuses.map(s=>`<option ${s===idea['Status']?'selected':''}>${s}</option>`).join('')}
+          </select>
+          <button class="btn btn-danger btn-sm" onclick="deleteIdea('${idea['ID']}')">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function saveIdeaFromPlan(block) {
+  if (!sheetsURL) { toast('Connect Google Sheets first', 'error'); return; }
+  const r = await sheetsPost('saveIdea', {title:block.title||'',contentType:block.type||'',gameTopic:'',hook:block.hook||'',thumbnailConcept:block.thumbnailConcept||'',status:'Saved'});
+  if (r?.success) toast('Idea saved to library!', 'success');
+  else toast('Save failed', 'error');
+}
+
+async function addIdeaManually() {
+  if (!sheetsURL) { toast('Connect Google Sheets first', 'error'); return; }
+  const title = document.getElementById('idea-title').value.trim();
+  if (!title) { toast('Please enter a video title', 'error'); return; }
+  const r = await sheetsPost('saveIdea', {
+    title, contentType: document.getElementById('idea-type').value,
+    gameTopic: document.getElementById('idea-topic').value,
+    hook: document.getElementById('idea-hook').value,
+    thumbnailConcept:'', status:'Saved'
+  });
+  if (r?.success) {
+    toast('Idea saved!', 'success');
+    document.getElementById('idea-title').value='';
+    document.getElementById('idea-topic').value='';
+    document.getElementById('idea-hook').value='';
+    loadIdeas();
+  } else toast('Save failed', 'error');
+}
+
+async function updateStatus(id, status, el) {
+  const statusCls = {'Saved':'s-saved','Filming':'s-filming','Editing':'s-editing','Posted':'s-posted','Skip':'s-skip'};
+  el.className = `status-badge ${statusCls[status]||'s-saved'}`;
+  const r = await sheetsPost('updateIdeaStatus', {id, status});
+  if (r?.success) toast('Status updated to ' + status, 'success');
+}
+
+async function deleteIdea(id) {
+  if (!confirm('Delete this idea?')) return;
+  const r = await sheetsPost('deleteIdea', {id});
+  if (r?.success) { toast('Idea deleted', 'success'); loadIdeas(); }
+}
+
+// ─── ANALYTICS ─────────────────────────────────────────
+async function saveAnalytics() {
+  if (!sheetsURL) { toast('Connect Google Sheets first', 'error'); return; }
+  const r = await sheetsPost('saveAnalytics', {
+    week: document.getElementById('a-week').value,
+    subscribers: document.getElementById('a-subs').value,
+    watchHours: document.getElementById('a-hours').value,
+    totalViews: document.getElementById('a-views').value,
+    shortsViews: document.getElementById('a-shorts').value,
+    liveViewers: document.getElementById('a-live').value,
+    newVideos: document.getElementById('a-videos').value,
+    newShorts: document.getElementById('a-shortsn').value,
+    notes: document.getElementById('a-notes').value
+  });
+  if (r?.success) { toast('Analytics saved!', 'success'); loadAnalytics(); }
+  else toast('Save failed', 'error');
+}
+
+async function loadAnalytics() {
+  const el = document.getElementById('analytics-history');
+  if (!sheetsURL) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-title">Not connected</div></div>'; return; }
+  const data = await sheetsGet('getAnalytics');
+  if (!data?.analytics?.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📈</div><div class="empty-title">No data yet</div></div>'; return; }
+  const rows = [...data.analytics].reverse().map(a => `
+    <tr>
+      <td class="num">${a['Week']||'—'}</td>
+      <td>${a['Date']||''}</td>
+      <td class="num" style="color:var(--purple)">${a['Subscribers']||0}</td>
+      <td class="num" style="color:var(--teal)">${a['Watch Hours']||0}</td>
+      <td class="num">${a['Total Views']||0}</td>
+      <td class="num" style="color:var(--cyan)">${a['Shorts Views']||0}</td>
+      <td class="num" style="color:var(--red)">${a['Live Stream Viewers']||0}</td>
+      <td>${a['Notes']||''}</td>
+    </tr>`).join('');
+  el.innerHTML = `<table class="history-table"><thead><tr><th>Week</th><th>Date</th><th>Subs</th><th>Hours</th><th>Views</th><th>Shorts</th><th>Live</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ─── DASHBOARD ─────────────────────────────────────────
+async function refreshAll() {
+  if (!sheetsURL) return;
+  try {
+    const [plansData, ideasData, analyticsData] = await Promise.all([
+      sheetsGet('getPlans'), sheetsGet('getIdeas'), sheetsGet('getAnalytics')
+    ]);
+
+    // Update stat cards
+    const lastAnalytic = analyticsData?.analytics?.[analyticsData.analytics.length-1];
+    document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-val" style="color:var(--purple)">${lastAnalytic?.[('Subscribers')]||'0'}</div><div class="stat-label">Subscribers</div><div class="stat-sub">Latest logged</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--teal)">${lastAnalytic?.['Watch Hours']||'0'}</div><div class="stat-label">Watch Hours</div><div class="stat-sub">Latest logged</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--amber)">${plansData?.plans?.length||0}</div><div class="stat-label">Saved Plans</div><div class="stat-sub">Total generated</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--cyan)">${ideasData?.ideas?.length||0}</div><div class="stat-label">Ideas Library</div><div class="stat-sub">Total ideas</div></div>`;
+
+    // Recent plans
+    const recentPlans = plansData?.plans?.slice(0,3)||[];
+    document.getElementById('dash-recent-plans').innerHTML = recentPlans.length ? recentPlans.map(p=>`
+      <div class="plan-card"><div class="plan-title">${p['Week Title']||'Plan'}</div>
+      <div class="plan-meta">${p['Generated On']||''} · ${p['Content Mode']||''} · ${p['AI Provider']||''}</div>
+      <div class="plan-summary" style="margin-top:6px">${p['Week Summary']||''}</div></div>`).join('') :
+      '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No plans yet</div></div>';
+
+    // Recent ideas
+    const recentIdeas = ideasData?.ideas?.slice(0,4)||[];
+    const statusCls = {'Saved':'s-saved','Filming':'s-filming','Editing':'s-editing','Posted':'s-posted','Skip':'s-skip'};
+    document.getElementById('dash-recent-ideas').innerHTML = recentIdeas.length ? recentIdeas.map(i=>`
+      <div class="idea-card"><div class="idea-top">
+        <div><div class="idea-title">${i['Video Title']||'Idea'}</div>
+        <div class="idea-meta">${i['Content Type']||''}</div></div>
+        <span class="status-badge ${statusCls[i['Status']]||'s-saved'}">${i['Status']||'Saved'}</span>
+      </div></div>`).join('') :
+      '<div class="empty-state"><div class="empty-icon">💡</div><div class="empty-title">No ideas yet</div></div>';
+  } catch(err) { console.error('Refresh error:', err); }
+}
+
+// ─── TOAST ─────────────────────────────────────────────
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = (type==='success'?'✅ ':type==='error'?'❌ ':'') + msg;
+  el.className = `toast show ${type}`;
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
